@@ -7,7 +7,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import java.io.File;
+import java.io.*;
 import javax.xml.*;
 import java.util.List;
 
@@ -140,6 +140,95 @@ public class PokedexService {
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // SERIALIZAR
+    public void serializar(int id1, int id2) {
+
+        try (Session session = HibernateConfig.getSessionFactory().openSession()) {
+
+            Pokedex px1 = session.get(Pokedex.class, (long) id1);
+            Pokedex px2 = session.get(Pokedex.class, (long) id2);
+
+            FileOutputStream fos = new FileOutputStream("pokedex.dat");
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+            oos.writeObject(px1);
+            oos.writeObject(px2);
+
+            oos.close();
+            fos.close();
+
+            System.out.println("Pokemons serializados correctamente.");
+
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // DESERIALIZAR
+    public void deserializar() {
+
+        try {
+            FileInputStream fis = new FileInputStream("pokedex.dat");
+            ObjectInputStream ois = new ObjectInputStream(fis);
+
+            Pokedex px1 = (Pokedex) ois.readObject();
+            Pokedex px2 = (Pokedex) ois.readObject();
+
+            ois.close();
+
+            System.out.println("Pokemons importados:");
+            System.out.println(px1);
+            System.out.println(px2);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // RESTAURAR DESDE SERIALIZACION
+    public void restaurarSerializados() {
+
+        try {
+            FileInputStream fis = new FileInputStream("pokedex.dat");
+            ObjectInputStream ois = new ObjectInputStream(fis);
+
+            Pokedex px1 = (Pokedex) ois.readObject();
+            Pokedex px2 = (Pokedex) ois.readObject();
+
+            ois.close();
+
+            Session session = HibernateConfig.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
+
+            Pokedex original1 = session.get(Pokedex.class, px1.getId());
+            Pokedex original2 = session.get(Pokedex.class, px2.getId());
+
+            if (original1 != null && original2 != null) {
+
+                original1.setNome(px1.getNome());
+                original1.setPeso(px1.getPeso());
+                original1.setMisc(px1.getMisc());
+
+                original2.setNome(px2.getNome());
+                original2.setPeso(px2.getPeso());
+                original2.setMisc(px2.getMisc());
+
+                transaction.commit();
+
+                System.out.println("Pokemons restaurados correctamente.");
+
+            } else {
+                transaction.rollback();
+                System.out.println("No se encontraron los pokemons.");
+            }
+
+            session.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

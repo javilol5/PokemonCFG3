@@ -1,11 +1,13 @@
 package model;
 
 import javax.persistence.*;
-import javax.persistence.Entity;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "pokedex")
-public class Pokedex{
+public class Pokedex implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +22,8 @@ public class Pokedex{
     @Column(name = "misc", length = 200, nullable = true)
     private String misc;
 
+    public Pokedex() {
+    }
 
     public void setId(Long id) {
         this.id = id;
@@ -34,7 +38,6 @@ public class Pokedex{
         this.misc = misc;
     }
 
-
     public Long getId() {
         return id;
     }
@@ -47,8 +50,6 @@ public class Pokedex{
     public String getMisc() {
         return misc;
     }
-
-
 
     @Override
     public String toString() {

@@ -11,6 +11,10 @@ import javax.xml.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.NodeList;
+
 public class AdestradorService {
 
     // CREATE
@@ -133,6 +137,134 @@ public class AdestradorService {
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    public void toXML(int id1, int id2) {
+
+        try {
+            Session session = HibernateConfig.getSessionFactory().openSession();
+
+            Adestrador ad1 = session.get(Adestrador.class, id1);
+            Adestrador ad2 = session.get(Adestrador.class, id2);
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document documento = builder.newDocument();
+
+            Element raiz = documento.createElement("adestradores");
+            documento.appendChild(raiz);
+
+            Adestrador[] adestradores = {ad1, ad2};
+
+            for (Adestrador ad : adestradores) {
+
+                if (ad != null) {
+                    Element adestrador = documento.createElement("adestrador");
+
+                    Element id = documento.createElement("id");
+                    id.setTextContent(String.valueOf(ad.getId()));
+                    adestrador.appendChild(id);
+
+                    Element nome = documento.createElement("nome");
+                    nome.setTextContent(ad.getNome());
+                    adestrador.appendChild(nome);
+
+                    Element nacemento = documento.createElement("nacemento");
+                    nacemento.setTextContent(ad.getNacemento().toString());
+                    adestrador.appendChild(nacemento);
+
+                    raiz.appendChild(adestrador);
+                }
+            }
+
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+
+            DOMSource source = new DOMSource(documento);
+            StreamResult result = new StreamResult(new File("adestradores_parte3.xml"));
+
+            transformer.transform(source, result);
+
+            session.close();
+
+            System.out.println("Adestradores exportados a XML.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // IMPORTAR XML
+    public void importarXML() {
+
+        try {
+            File archivo = new File("adestradores_parte3.xml");
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document documento = builder.parse(archivo);
+
+            NodeList lista = documento.getElementsByTagName("adestrador");
+
+            for (int i = 0; i < lista.getLength(); i++) {
+
+                Element elemento = (Element) lista.item(i);
+
+                int id = Integer.parseInt(elemento.getElementsByTagName("id").item(0).getTextContent());
+                String nome = elemento.getElementsByTagName("nome").item(0).getTextContent();
+                LocalDate nacemento = LocalDate.parse(
+                        elemento.getElementsByTagName("nacemento").item(0).getTextContent()
+                );
+
+                System.out.println("ID: " + id + " | Nome: " + nome + " | Nacemento: " + nacemento);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // RESTAURAR DESDE XML
+    public void restaurarXML() {
+
+        try {
+            File archivo = new File("adestradores_parte3.xml");
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document documento = builder.parse(archivo);
+
+            NodeList lista = documento.getElementsByTagName("adestrador");
+
+            Session session = HibernateConfig.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
+
+            for (int i = 0; i < lista.getLength(); i++) {
+
+                Element elemento = (Element) lista.item(i);
+
+                int id = Integer.parseInt(elemento.getElementsByTagName("id").item(0).getTextContent());
+                String nome = elemento.getElementsByTagName("nome").item(0).getTextContent();
+                LocalDate nacemento = LocalDate.parse(
+                        elemento.getElementsByTagName("nacemento").item(0).getTextContent()
+                );
+
+                Adestrador ad = session.get(Adestrador.class, id);
+
+                if (ad != null) {
+                    ad.setNome(nome);
+                    ad.setNacemento(nacemento);
+                }
+            }
+
+            transaction.commit();
+            session.close();
+
+            System.out.println("Adestradores restaurados correctamente.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
